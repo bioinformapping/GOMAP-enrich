@@ -1,4 +1,4 @@
-FROM rocker/shiny:4.1.0
+FROM rocker/shiny:4.4
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -9,6 +9,7 @@ RUN apt-get update -qq \
     libgdal-dev \
     libproj-dev \
     libudunits2-dev \
+    libxml2-dev \
   && rm -rf /var/lib/apt/lists/*
 
 # Remove examples
@@ -19,6 +20,8 @@ RUN rm -rf *
 COPY --chown=shiny:shiny .Rprofile renv.lock ./
 COPY --chown=shiny:shiny renv/activate.R renv/
 RUN sudo -u shiny Rscript -e 'renv::restore(clean = TRUE)'
+
+RUN sudo mkdir /srv/shiny-server/app_cache && chown shiny:shiny /srv/shiny-server/app_cache
 
 # Copy app
 COPY --chown=shiny:shiny app.R ./

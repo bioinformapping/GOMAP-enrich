@@ -2,4 +2,5 @@ services:
   app:
     build: .
     ports:
-      - "3838"
+      - "3838:3838"
+    image: quay.io/wkpalan/gomap-enrich:latest

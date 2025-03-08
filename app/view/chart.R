@@ -1,10 +1,7 @@
-# app/view/chart.R
-
 box::use(
-  echarts4r,
-  shiny[h3, moduleServer, NS, tagList],
-  rhino[rhinos],
   bslib[card, card_header],
+  echarts4r,
+  shiny[h3, moduleServer, NS],
 )
 
 box::use(
@@ -39,4 +36,3 @@ server <- function(id, data) {
     )
   })
 }
-

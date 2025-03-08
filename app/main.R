@@ -1,21 +1,19 @@
 
 box::use(
-  shiny[
-    div, moduleServer, NS, renderUI, tags, uiOutput, fluidRow, h1
-  ],
-  semantic.dashboard[dashboard_page, dashboard_header, dashboard_body],
   bslib[
-    page_navbar, layout_columns, bs_theme, bs_add_rules, toggle_dark_mode,
-    nav_spacer, nav_panel, navbar_options
+    bs_add_rules, bs_theme, nav_panel, navbar_options, page_navbar
   ],
   rhino[rhinos],
   sass[sass_file],
+  shiny[
+    moduleServer, NS
+  ],
 )
 
 box::use(
   app/view/chart,
-  app/view/table,
   app/view/sidebar,
+  app/view/table,
 )
 
 
@@ -29,7 +27,7 @@ ui <- function(id) {
   page_navbar(
     title = "GOMAP-Enrich",
     theme = theme,
-    sidebar = sidebar$ui(ns("sidebar"),data=rhinos),
+    sidebar = sidebar$ui(ns("sidebar"), data = rhinos),
     navbar_options = navbar_options(
       bg = "#0062cc",
       underline = TRUE
@@ -50,8 +48,7 @@ ui <- function(id) {
 server <- function(id) {
   moduleServer(id, function(input, output, session) {
     data <- rhinos
-    # datatable$server("datatable")
-    table$server("table", data=data)
-    chart$server("chart", data=data)
+    table$server("table", data = data)
+    chart$server("chart", data = data)
   })
 }

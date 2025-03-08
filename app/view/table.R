@@ -1,7 +1,7 @@
 box::use(
-  reactable,
-  shiny[h3, moduleServer, NS, tagList],
   bslib[card, card_header],
+  reactable,
+  shiny[h3, moduleServer, NS],
 )
 
 box::use(
