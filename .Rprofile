@@ -1,3 +1,5 @@
+Sys.setenv(MAKEFLAGS = sprintf("-j%d", parallel::detectCores()))
+
 if (file.exists("renv")) {
   source("renv/activate.R")
 } else {
@@ -16,3 +18,4 @@ if (nzchar(system.file(package = "box.lsp"))) {
     )
   )
 }
+
