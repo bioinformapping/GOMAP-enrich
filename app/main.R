@@ -11,6 +11,7 @@ box::use(
 )
 
 box::use(
+  app/logic/datasets[get_datasets],
   app/view/chart,
   app/view/sidebar,
   app/view/table,
@@ -23,11 +24,11 @@ ui <- function(id) {
 
   theme <- bs_theme(bootswatch = "default") |>
     bs_add_rules(sass_file("app/styles/main.scss"))
-
+  datasets = get_datasets()
   page_navbar(
     title = "GOMAP-Enrich",
     theme = theme,
-    sidebar = sidebar$ui(ns("sidebar"), data = rhinos),
+    sidebar = sidebar$ui(ns("sidebar"), data = datasets),
     navbar_options = navbar_options(
       bg = "#0062cc",
       underline = TRUE
