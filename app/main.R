@@ -6,8 +6,9 @@ box::use(
   rhino[rhinos],
   sass[sass_file],
   shiny[
-    moduleServer, NS
+    moduleServer, NS, Progress, tags, includeHTML
   ],
+  shinybusy[add_busy_bar],
 )
 
 box::use(
@@ -30,7 +31,7 @@ ui <- function(id) {
     bs_add_rules(sass_file("app/styles/main.scss"))
   datasets = get_datasets()
   page_navbar(
-    title = "GOMAP-Enrich",
+    title = "GOMAP-Enrich (v0.1a)",
     theme = theme,
     sidebar = sidebar$ui(ns("sidebar"), data = datasets),
     navbar_options = navbar_options(

@@ -1,9 +1,11 @@
 box::use(
   bslib[sidebar],
   shiny[
-    actionButton, icon, fileInput, moduleServer, NS, reactive, req, selectInput,
-    textAreaInput, updateSelectInput, updateTextAreaInput, observeEvent
+    actionButton, icon, fileInput, moduleServer, NS, reactive, req,
+    selectInput, textAreaInput, updateSelectInput, updateTextAreaInput,
+    observeEvent, observe, Progress
   ],
+  shinybusy[add_busy_bar],
 )
 
 box::use(
@@ -16,6 +18,7 @@ ui <- function(id, data) {
   ns <- NS(id)
   sidebar <- sidebar(
     title = "Inputs",
+    add_busy_bar(color = "red"),
     selectInput(
       inputId = ns("species"),
       label = "Select Species",
@@ -64,6 +67,7 @@ ui <- function(id, data) {
 server <- function(id, data) {
   moduleServer(id, function(input, output, session) {
 
+
     de_gene_ids = reactive({
       req(input$input_de_gene_ids)
       de_gene_ids = strsplit(input$input_de_gene_ids,split = c(",|\t| |\n")) |>
@@ -89,6 +93,8 @@ server <- function(id, data) {
       )
       return(raw_go_annots)
     })
+
+
 
     filt_go_annots = reactive({
       req(raw_go_annots())
@@ -135,6 +141,7 @@ server <- function(id, data) {
       )
     })
 
+    observe(enriched_go)
 
 
     return(

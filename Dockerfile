@@ -24,6 +24,7 @@ COPY --chown=shiny:shiny renv/activate.R renv/
 RUN sudo -u shiny Rscript -e 'options(renv.config.pak.enabled = TRUE); renv::restore(clean = TRUE)'
 
 RUN sudo mkdir /srv/shiny-server/app_cache && chown shiny:shiny /srv/shiny-server/app_cache
+RUN chown -R shiny:shiny /usr/local/lib/R/
 
 # Copy app
 COPY --chown=shiny:shiny app.R ./

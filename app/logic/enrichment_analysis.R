@@ -1,7 +1,7 @@
 box::use(
   clusterProfiler[read.gaf,buildGOmap,enricher],
   enrichplot[pairwise_termsim],
-  dplyr[filter, pull, select, mutate],
+  dplyr[filter, pull, select, mutate, inner_join],
   utils[head],
   AnnotationDbi[Term],
 )
@@ -22,7 +22,19 @@ read_go_annot <- function(data, species, assembly) {
       Assembly=assembly
     )
 
-  return(raw_go_annots)
+  # print(head(raw_go_annots))
+
+  goterms <- Term(raw_go_annots$GO)
+
+  term2name <- data.frame("GO"=names(goterms),"term"=goterms ) |>
+    filter(!is.na(GO)|!is.na(term)) |>
+    unique()
+
+  raw_go_annots_out = inner_join(raw_go_annots,term2name)
+
+  # print(head(raw_go_annots_out))
+
+  return(raw_go_annots_out)
 }
 
 #' @export
@@ -48,7 +60,8 @@ get_enriched_terms <- function(
   goterms <- Term(cp_go_data$GO)
 
   term2name <- data.frame("GOID"=names(goterms),"term"=goterms ) |>
-    filter(!is.na(GOID),!is.na(term))
+    filter(!is.na(GOID) | !is.na(term)) |>
+    unique()
 
   enrich_go = enricher(
     gene = de_gene_ids,

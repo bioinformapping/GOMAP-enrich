@@ -4,17 +4,29 @@ box::use(
     card, card_header, card_footer, layout_columns, page_fillable, value_box,
     showcase_bottom
   ],
-  dplyr[pull, filter, mutate, case_when],
+  dplyr[pull, filter, mutate, case_when, rename],
   reactable,
   scales[comma],
-  shiny[actionButton, div, icon, h2, h3, moduleServer, NS, observe, renderText, req, textOutput],
+  shiny[actionButton, div, icon, h2, h3, h4, moduleServer, NS, observe, renderText,
+        req, textOutput, Progress,tags],
   utils[head],
+  shinybusy[add_busy_bar],
 )
 
 #' @export
 ui <- function(id) {
   ns <- NS(id)
   page_fillable(
+    tags$head(
+      tags$script(
+        src = "https://www.googletagmanager.com/gtag/js?id=G-5116E3QS5W",
+        async = ""
+      ),
+      tags$script(
+        src = "app/static/js/gtag.js"
+      )
+    ),
+    # add_busy_bar(color = "#FF0000"),
     layout_columns(
       height = "150px",
       fill = FALSE,
@@ -42,7 +54,7 @@ ui <- function(id) {
     card(
       card_header(
         layout_columns(
-          h3("GO Annotations"),
+          h4("GO Annotations"),
           actionButton(
             inputId = "asd",
             label = "",
@@ -53,10 +65,7 @@ ui <- function(id) {
           col_widths = c(11,1)
         )
       ),
-      reactable$reactableOutput(ns("dataset_tbl")),
-      card_footer(
-        div("Footer")
-      )
+      reactable$reactableOutput(ns("dataset_tbl"))
     )
   )
 }
@@ -101,7 +110,7 @@ server <- function(
       req(de_gene_ids())
       req(background_gene_ids())
 
-      print(dim(filt_go_annots()))
+      # print(dim(filt_go_annots()))
 
       out = filt_go_annots() |>
         filter(
@@ -111,16 +120,22 @@ server <- function(
           `Gene Type` = case_when(
             GENE %in% background_gene_ids() ~ "Background",
             GENE %in% de_gene_ids() ~ "DEG"
-          )
+          ),
+        ) |>
+        rename(
+          "Name"="term"
         )
-      print(head(out))
+      # print(head(out))
       reactable$reactable(
         out,
         searchable = T,
-        elementId ="go-annot-table"
+        filterable = T,
+        compact = T,
+        wrap = F,
+        elementId ="go-annot-table",
+
       )
-    },
-    )
+    })
 
   })
 }
