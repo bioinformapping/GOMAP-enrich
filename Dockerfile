@@ -19,6 +19,7 @@ RUN rm -rf *
 # Install R dependencies
 COPY --chown=shiny:shiny .Rprofile renv.lock ./
 COPY --chown=shiny:shiny renv/activate.R renv/
+
 RUN sudo -u shiny Rscript -e 'renv::restore(clean = TRUE)'
 
 RUN sudo mkdir /srv/shiny-server/app_cache && chown shiny:shiny /srv/shiny-server/app_cache
@@ -31,3 +32,4 @@ COPY --chown=shiny:shiny app app/
 
 COPY --chown=shiny:shiny docker/shiny-server.conf /etc/shiny-server/
 USER shiny
+

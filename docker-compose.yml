@@ -4,3 +4,6 @@ services:
     ports:
       - "3838:3838"
     image: quay.io/wkpalan/gomap-enrich:latest
+    volumes: 
+      - ./data:/srv/shiny-server/app/static/data
+  
