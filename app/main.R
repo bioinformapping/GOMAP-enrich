@@ -13,10 +13,14 @@ box::use(
 box::use(
   app/logic/datasets[get_datasets],
   app/view/chart,
+  app/view/input_summary,
   app/view/sidebar,
   app/view/table,
+  app/view/enrich_barplot,
+  app/view/enrich_dotplot,
 )
 
+shiny::enableBookmarking()
 
 #' @export
 ui <- function(id) {
@@ -34,8 +38,20 @@ ui <- function(id) {
       underline = TRUE
     ),
     nav_panel(
-      title = "Table",
-      table$ui(ns("table")),
+      title = "Input Summary",
+      input_summary$ui(ns("datasets")),
+    ),
+    nav_panel(
+      title = "Bar Plot",
+      enrich_barplot$ui(ns("enr-barplot")),
+    ),
+    nav_panel(
+      title = "Dot Plot",
+      enrich_dotplot$ui(ns("enr-dotplot")),
+    ),
+    nav_panel(
+      title = "Output Table",
+      table$ui(ns("enrich_table")),
     ),
     nav_panel(
       title = "Chart",
@@ -49,7 +65,24 @@ ui <- function(id) {
 server <- function(id) {
   moduleServer(id, function(input, output, session) {
     data <- rhinos
-    table$server("table", data = data)
+    datasets = get_datasets()
+    sidebar_data = sidebar$server("sidebar",data = datasets)
+    input_summary$server(
+      id = "datasets", data = datasets,
+      de_gene_ids = sidebar_data$de_gene_ids,
+      background_gene_ids = sidebar_data$background_gene_ids,
+      raw_go_annots = sidebar_data$raw_go_annots,
+      filt_go_annots = sidebar_data$filt_go_annots
+    )
     chart$server("chart", data = data)
+    enrich_barplot$server(
+      "enr-barplot", enriched_go=sidebar_data$enriched_go
+    )
+    enrich_dotplot$server(
+      "enr-dotplot", enriched_go=sidebar_data$enriched_go
+    )
+    table$server(
+      "enrich_table", enriched_go=sidebar_data$enriched_go
+    )
   })
 }

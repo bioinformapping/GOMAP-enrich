@@ -1,49 +1,151 @@
 box::use(
   bslib[sidebar],
   shiny[
-    fileInput, moduleServer, NS, selectizeInput, textAreaInput,
+    actionButton, icon, fileInput, moduleServer, NS, reactive, req, selectInput,
+    textAreaInput, updateSelectInput, updateTextAreaInput, observeEvent
   ],
 )
 
-shiny::enableBookmarking()
+box::use(
+  app/logic/enrichment_analysis[read_go_annot, filter_go_annot, get_enriched_terms],
+  app/logic/datasets[get_examples],
+)
 
 #' @export
 ui <- function(id, data) {
   ns <- NS(id)
   sidebar <- sidebar(
     title = "Inputs",
-    selectizeInput(
+    selectInput(
       inputId = ns("species"),
       label = "Select Species",
       choices = data$Species |>
-        unique()
+        unique(),
+      selected = NULL,
+      multiple = F
     ),
-    selectizeInput(
+    selectInput(
       inputId = ns("assembly"),
       label = "Select Assembly",
       choices = data$Assembly |>
-        unique()
+        unique(),
+      selected = NULL,
+      multiple = F
+    ),
+    selectInput(
+      inputId = ns("ontology"),
+      label = "Select Ontology",
+      choices = list(
+        `Molecular Function` = "MF",
+        `Biological Process` = "BP",
+        `Cellular Component` = "CC"
+      ),
+      selected = NULL,
+      multiple = F
     ),
     textAreaInput(
-      inputId = ns("Gene IDs"),
+      inputId = ns("input_de_gene_ids"),
       label = "Paste DE Gene List"
     ),
-    fileInput(
-      inputId = ns("file-upload"),
-      label = "Upload Gene List",
-      multiple = TRUE
+    textAreaInput(
+      inputId = ns("input_background_gene_ids"),
+      label = "Paste Background Gene List"
     ),
-    selectizeInput(
-      inputId = ns("var"),
-      label = "Select Species",
-      choices = data$Species |>
-        unique()
-    )
+    actionButton(
+      inputId = ns("example_de_genes"),
+      label = "Example Data",
+      icon = icon("seedling")
+    ),
+
   )
 }
 
 #' @export
-server <- function(id) {
+server <- function(id, data) {
   moduleServer(id, function(input, output, session) {
+
+    de_gene_ids = reactive({
+      req(input$input_de_gene_ids)
+      de_gene_ids = strsplit(input$input_de_gene_ids,split = c(",|\t| |\n")) |>
+        unlist() |> unique()
+      return(de_gene_ids)
+    })
+
+    background_gene_ids = reactive({
+      req(input$input_background_gene_ids)
+      background_gene_ids = strsplit(input$input_background_gene_ids,split = c(",|\t| |\n")) |>
+        unlist() |>
+        unique()
+      return(background_gene_ids)
+    })
+
+    raw_go_annots = reactive({
+      req(input$input_de_gene_ids)
+      req(input$species)
+      req(input$assembly)
+      # print("read_go_annot")
+      raw_go_annots = read_go_annot(
+        data, input$species, input$assembly
+      )
+      return(raw_go_annots)
+    })
+
+    filt_go_annots = reactive({
+      req(raw_go_annots())
+      req(input$ontology)
+
+      filt_go_annots = filter_go_annot(
+        raw_go_annots(), input$ontology
+      )
+      return(filt_go_annots)
+    })
+
+    enriched_go = reactive({
+      req(filt_go_annots())
+      req(input$ontology)
+
+      enriched_go = get_enriched_terms(
+        filt_go_annots = filt_go_annots(),
+        de_gene_ids = de_gene_ids(),
+        background_gene_ids = background_gene_ids(),
+        ontology = input$ontology
+      )
+      return(enriched_go)
+    })
+
+
+
+    observeEvent(input$example_de_genes,{
+      example_data = get_examples()
+      updateTextAreaInput(
+        inputId = "input_de_gene_ids",
+        value = example_data[["de_genes"]]
+      )
+      updateTextAreaInput(
+        inputId = "input_background_gene_ids",
+        value = example_data[["background_genes"]]
+      )
+      updateSelectInput(
+        inputId = "species",
+        selected = "Zea mays"
+      )
+      updateSelectInput(
+        inputId = "assembly",
+        selected = "B73_v4"
+      )
+    })
+
+
+
+    return(
+      list(
+        de_gene_ids = de_gene_ids,
+        background_gene_ids = background_gene_ids,
+        raw_go_annots = raw_go_annots,
+        filt_go_annots = filt_go_annots,
+        enriched_go = enriched_go
+      )
+    )
+
   })
 }
