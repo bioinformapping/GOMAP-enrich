@@ -38,7 +38,8 @@ server <- function(id, enriched_go) {
         wrap=F,
         pagination = F,
         elementId = "enrich-table",
-        resizable = T
+        resizable = T,
+
 
       )
     })

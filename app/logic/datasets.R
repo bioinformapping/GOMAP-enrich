@@ -3,7 +3,7 @@ box::use(
 )
 
 get_datasets <- function() {
-  datasets = read_excel("app/static/datasets.xlsx")
+  datasets = read_excel("app/static/data/datasets.xlsx")
   return(datasets)
 }
 
