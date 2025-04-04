@@ -1,0 +1,134 @@
+---
+title: "R Notebook"
+---
+
+## Load Packages
+
+```{r}
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(clusterProfiler)
+  library(enrichplot)
+  library(plotly)
+  library(GO.db)
+  library(dplyr)
+})
+
+maize_GO_data = read.gaf("data/maize.B73.AGPv4.aggregate.gaf.gz")
+
+cp_go_data = maize_GO_data |>
+  dplyr::select(
+    GO, GENE, ONTOLOGY
+  ) |>
+  buildGOmap()
+
+cp_go_data
+
+goterms <- Term(cp_go_data$GO)
+
+term2name <- data.frame("GOID"=names(goterms),"term"=goterms ) |>
+  filter(!is.na(GOID) | !is.na(term)) |>
+  unique()
+
+```
+
+## 
+```{r}
+DEGs = readLines("DEG/B73_v4.test.txt")
+universe = readLines("DEG/B73_v4_universe.txt")
+
+select_class = "MF"
+sel_TERM2GENE = cp_go_data |> 
+  filter(
+    ONTOLOGY==select_class,
+    GENE %in% c(DEGs,universe),
+    GO %in% term2name$GOID
+  ) 
+
+enrich_go = clusterProfiler::enricher(
+  
+  gene = DEGs,
+  universe = universe,
+  TERM2GENE = sel_TERM2GENE,
+  TERM2NAME = term2name,
+  pvalueCutoff = 0.1,
+  qvalueCutoff = 0.5,
+  minGSSize = 10,
+  maxGSSize = 500
+)
+
+enrich_go@ontology = select_class
+
+passing_terms = enrich_go@result |> filter(p.adjust < 0.05) |> length()
+
+enrich_go = pairwise_termsim(enrich_go)
+
+
+if(passing_terms>0){
+  
+   
+  # enrichplot::dotplot(enrich_go) 
+  
+  dotplot(enrich_go)
+  # barplot(enrich_go)
+  
+  # treeplot(enrich_go,cluster.params = list(n=6))
+  # clusterProfiler::cnetplot(enrich_go,node_label = "category")
+  # 
+  # emapplot(enrich_go,layout="kk")
+  # 
+  # upsetplot(enrich_go,n=15)
+} else{
+  print("No enriched terms")
+}
+```
+
+```{r}
+plotGOgraph(
+  enrich_go,
+  firstSigNodes = 30,
+  sigForAll = F
+)
+
+plot_data = enrich_go |> as.data.frame()
+
+
+plot_data |>
+  separate_rows(
+    sep = "\\/",
+    geneID
+  )
+```
+
+```{r}
+# plot_data |>
+#   filter(
+#     p.adjust<0.05
+#   ) |>
+# ggplot(aes(x=RichFactor,y=reorder(Description,RichFactor),fill=p.adjust)) +
+#   geom_bar(stat = "identity") +
+#   scale_fill_gradient(low = "red",high = "blue") 
+  
+plot_data |>
+  filter(
+    p.adjust<0.05
+  ) |>
+  arrange(
+    RichFactor
+  ) |>
+  plotly::plot_ly(
+    x=~RichFactor,
+    y = ~Description,
+    color = ~p.adjust,
+    type = "scatter",
+    size = ~Count,
+    sizes = c(100,1000),
+    stroke = "black"
+  ) |>
+  highlight(
+    on = "plotly_click",off = "plotly_doubleclick",
+    selectize = TRUE, dynamic = TRUE,  persistent = TRUE
+  )
+```
+
+
