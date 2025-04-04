@@ -8,7 +8,7 @@ box::use(
   reactable,
   scales[comma],
   shiny[actionButton, div, icon, h2, h3, h4, moduleServer, NS, observe, renderText,
-        req, textOutput, Progress,tags],
+        req, textOutput, Progress,tags,includeHTML],
   utils[head],
   shinybusy[add_busy_bar],
 )
@@ -18,15 +18,8 @@ ui <- function(id) {
   ns <- NS(id)
   page_fillable(
     tags$head(
-      tags$script(
-        src = "https://www.googletagmanager.com/gtag/js?id=G-5116E3QS5W",
-        async = ""
-      ),
-      tags$script(
-        src = "app/static/js/gtag.js"
-      )
+      includeHTML("app/static/google-analytics.html"),
     ),
-    # add_busy_bar(color = "#FF0000"),
     layout_columns(
       height = "150px",
       fill = FALSE,
