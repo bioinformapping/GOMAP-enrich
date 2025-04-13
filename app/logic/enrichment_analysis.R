@@ -15,7 +15,13 @@ read_go_annot <- function(data, species, assembly) {
      ) |>
     pull(file)
 
-  infile = file.path("app","static","data",sel_file)
+  print(sel_file)
+
+  if(length(sel_file)==0){
+    return(NULL)
+  }
+
+  infile = file.path("app","static","data","gaf",sel_file)
   raw_go_annots = read.gaf(infile) |>
     mutate(
       Species=species,

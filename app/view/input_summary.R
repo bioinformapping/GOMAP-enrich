@@ -72,28 +72,31 @@ server <- function(
 
     output$vbox_num_de_genes = renderText({
       req(de_gene_ids())
-      req(raw_go_annots())
+
       de_gene_ids() |>
         length()
     })
+
     output$vbox_num_background_genes = renderText({
       req(background_gene_ids())
 
       background_gene_ids() |>
         length()
     })
+
     output$vbox_num_total_genes = renderText({
-      req(raw_go_annots())
-      raw_go_annots() |>
+      req(filt_go_annots())
+      filt_go_annots() |>
         pull(GENE) |>
         unique() |>
         length() |>
         comma()
     })
-    output$vbox_num_total_annots = renderText({
-      req(raw_go_annots())
 
-      raw_go_annots() |>
+    output$vbox_num_total_annots = renderText({
+      req(filt_go_annots())
+
+      filt_go_annots() |>
         nrow() |>
         comma()
     })

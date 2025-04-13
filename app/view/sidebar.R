@@ -3,8 +3,9 @@ box::use(
   shiny[
     actionButton, icon, fileInput, moduleServer, NS, reactive, req,
     selectInput, textAreaInput, updateSelectInput, updateTextAreaInput,
-    observeEvent, observe, Progress
+    observeEvent, observe, Progress, submitButton, eventReactive
   ],
+  dplyr [ filter, pull],
   shinybusy[add_busy_bar],
 )
 
@@ -30,8 +31,7 @@ ui <- function(id, data) {
     selectInput(
       inputId = ns("assembly"),
       label = "Select Assembly",
-      choices = data$Assembly |>
-        unique(),
+      choices = NULL,
       selected = NULL,
       multiple = F
     ),
@@ -59,7 +59,11 @@ ui <- function(id, data) {
       label = "Example Data",
       icon = icon("seedling")
     ),
-
+    actionButton(
+      inputId = ns("submit_btn"),
+      label = "Analyze Data",
+      icon = icon("magnifying-glass-chart")
+    )
   )
 }
 
@@ -67,6 +71,30 @@ ui <- function(id, data) {
 server <- function(id, data) {
   moduleServer(id, function(input, output, session) {
 
+    observeEvent(
+      input$species,{
+
+        updateTextAreaInput(
+          inputId = "input_de_gene_ids",
+          value = ""
+        )
+
+        updateTextAreaInput(
+          inputId = "input_background_gene_ids",
+          value = ""
+        )
+
+        assembly_choices = data |>
+          filter(
+            Species == input$species
+          ) |>
+          pull(Assembly)
+        updateSelectInput(
+          inputId = "assembly",
+          choices = assembly_choices
+        )
+      }
+    )
 
     de_gene_ids = reactive({
       req(input$input_de_gene_ids)
@@ -84,21 +112,22 @@ server <- function(id, data) {
     })
 
     raw_go_annots = reactive({
-      req(input$input_de_gene_ids)
       req(input$species)
       req(input$assembly)
-      # print("read_go_annot")
+
+      print("Raw GO is still happening")
+
       raw_go_annots = read_go_annot(
         data, input$species, input$assembly
       )
       return(raw_go_annots)
     })
 
-
-
     filt_go_annots = reactive({
       req(raw_go_annots())
       req(input$ontology)
+
+      print("filt_go_annots is still happening")
 
       filt_go_annots = filter_go_annot(
         raw_go_annots(), input$ontology
@@ -106,7 +135,9 @@ server <- function(id, data) {
       return(filt_go_annots)
     })
 
-    enriched_go = reactive({
+    enriched_go = eventReactive(input$submit_btn,{
+      req(background_gene_ids())
+      req(de_gene_ids())
       req(filt_go_annots())
       req(input$ontology)
 
@@ -123,14 +154,6 @@ server <- function(id, data) {
 
     observeEvent(input$example_de_genes,{
       example_data = get_examples()
-      updateTextAreaInput(
-        inputId = "input_de_gene_ids",
-        value = example_data[["de_genes"]]
-      )
-      updateTextAreaInput(
-        inputId = "input_background_gene_ids",
-        value = example_data[["background_genes"]]
-      )
       updateSelectInput(
         inputId = "species",
         selected = "Zea mays"
@@ -139,9 +162,17 @@ server <- function(id, data) {
         inputId = "assembly",
         selected = "B73_v4"
       )
+      updateTextAreaInput(
+        inputId = "input_de_gene_ids",
+        value = example_data[["de_genes"]]
+      )
+      updateTextAreaInput(
+        inputId = "input_background_gene_ids",
+        value = example_data[["background_genes"]]
+      )
     })
 
-    observe(enriched_go)
+    # observe(enriched_go)
 
 
     return(
