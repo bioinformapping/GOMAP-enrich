@@ -23,6 +23,7 @@ ui <- function(id) {
     layout_columns(
       height = "150px",
       fill = FALSE,
+      # col_widths=c(4,4,2,2),
       value_box(
         title="Annotated Genes",
         value = textOutput(ns("vbox_num_total_genes")),
@@ -86,19 +87,31 @@ server <- function(
 
     output$vbox_num_total_genes = renderText({
       req(filt_go_annots())
-      filt_go_annots() |>
+      ont_genes = filt_go_annots() |>
         pull(GENE) |>
         unique() |>
         length() |>
         comma()
+      all_genes = raw_go_annots() |>
+        pull(GENE) |>
+        unique() |>
+        length() |>
+        comma()
+
+      paste0(ont_genes,"/",all_genes)
+
     })
 
     output$vbox_num_total_annots = renderText({
       req(filt_go_annots())
 
-      filt_go_annots() |>
+      ont_annots = filt_go_annots() |>
         nrow() |>
         comma()
+      all_annots = raw_go_annots() |>
+        nrow() |>
+        comma()
+      paste0(ont_annots,"/",all_annots)
     })
 
     output$dataset_tbl <- reactable$renderReactable({

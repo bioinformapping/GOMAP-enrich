@@ -11,6 +11,9 @@ RUN apt-get update -qq \
     libudunits2-dev \
     libxml2-dev \
     libglpk40 \
+    libfribidi-dev \
+    libglpk-dev \
+    libharfbuzz-dev \
   && rm -rf /var/lib/apt/lists/*
 
 # Remove examples
@@ -20,11 +23,15 @@ RUN rm -rf *
 # Install R dependencies
 COPY --chown=shiny:shiny .Rprofile renv.lock ./
 COPY --chown=shiny:shiny renv/activate.R renv/
+# COPY --chown=shiny:shiny .Rprofile ./
+
+# RUN sudo -u shiny Rscript -e 'renv::restore(clean = TRUE)'
 
 RUN sudo -u shiny Rscript -e 'options(renv.config.pak.enabled = TRUE); renv::restore(clean = TRUE)'
 
 RUN sudo mkdir /srv/shiny-server/app_cache && chown shiny:shiny /srv/shiny-server/app_cache
 RUN chown -R shiny:shiny /usr/local/lib/R/
+
 
 # Copy app
 COPY --chown=shiny:shiny app.R ./
