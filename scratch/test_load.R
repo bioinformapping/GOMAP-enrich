@@ -1,0 +1,15 @@
+box::use(clusterProfiler[read.gaf])
+start <- Sys.time()
+cat("Reading gaf...\n")
+gaf <- read.gaf("data/maize.B73.AGPv4.aggregate.gaf.gz")
+print(Sys.time() - start)
+
+start <- Sys.time()
+cat("Saving RDS...\n")
+saveRDS(gaf, "scratch/maize.rds")
+print(Sys.time() - start)
+
+start <- Sys.time()
+cat("Reading RDS...\n")
+gaf2 <- readRDS("scratch/maize.rds")
+print(Sys.time() - start)

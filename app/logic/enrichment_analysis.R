@@ -6,8 +6,15 @@ box::use(
   AnnotationDbi[Term],
 )
 
+# Global cache for loaded GO annotations to prevent redundant file reads/parsing
+go_cache <- new.env(parent = emptyenv())
+
 #' @export
 read_go_annot <- function(data, species, assembly) {
+  cache_key <- paste(species, assembly, sep = "___")
+  if (exists(cache_key, envir = go_cache)) {
+    return(get(cache_key, envir = go_cache))
+  }
 
   sel_file = data |>
     filter(
@@ -15,25 +22,48 @@ read_go_annot <- function(data, species, assembly) {
      ) |>
     pull(file)
 
-  infile = file.path("app","static","data",sel_file)
-  raw_go_annots = read.gaf(infile) |>
-    mutate(
-      Species=species,
-      Assembly=assembly
-    )
+  if (length(sel_file) == 0 || is.na(sel_file) || sel_file == "") {
+    warning("No GAF file found matching species '", species, "' and assembly '", assembly, "'")
+    return(NULL)
+  }
 
-  # print(head(raw_go_annots))
+  infile = file.path("app","static","data","gaf",sel_file)
+  
+  # Ensure the GAF file actually exists
+  if (!file.exists(infile)) {
+    warning("GAF file does not exist at path: ", infile)
+    return(NULL)
+  }
 
-  goterms <- Term(raw_go_annots$GO)
+  rds_file = paste0(infile, ".rds")
+  
+  if (file.exists(rds_file)) {
+    raw_go_annots_out = readRDS(rds_file)
+  } else {
+    raw_go_annots = read.gaf(infile) |>
+      mutate(
+        Species=species,
+        Assembly=assembly
+      )
+  
+    # CRITICAL OPTIMIZATION: Query database only for UNIQUE GO terms to avoid massive redundancy.
+    # This reduces lookup times from seconds/minutes to milliseconds.
+    goterms <- Term(unique(raw_go_annots$GO))
+  
+    term2name <- data.frame("GO"=names(goterms),"term"=goterms ) |>
+      filter(!is.na(GO)|!is.na(term)) |>
+      unique()
+  
+    raw_go_annots_out = inner_join(raw_go_annots,term2name)
+    
+    tryCatch({
+      saveRDS(raw_go_annots_out, rds_file)
+    }, error = function(e) {
+      warning("Failed to save RDS cache: ", e$message)
+    })
+  }
 
-  term2name <- data.frame("GO"=names(goterms),"term"=goterms ) |>
-    filter(!is.na(GO)|!is.na(term)) |>
-    unique()
-
-  raw_go_annots_out = inner_join(raw_go_annots,term2name)
-
-  # print(head(raw_go_annots_out))
-
+  assign(cache_key, raw_go_annots_out, envir = go_cache)
   return(raw_go_annots_out)
 }
 
@@ -57,7 +87,8 @@ get_enriched_terms <- function(
     ) |>
     buildGOmap()
 
-  goterms <- Term(cp_go_data$GO)
+  # CRITICAL OPTIMIZATION: Query database only for UNIQUE GO terms to avoid database lookup overhead.
+  goterms <- Term(unique(cp_go_data$GO))
 
   term2name <- data.frame("GOID"=names(goterms),"term"=goterms ) |>
     filter(!is.na(GOID) | !is.na(term)) |>

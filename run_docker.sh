@@ -1,1 +1,2 @@
-docker compose run app
+podman-compose \
+    up

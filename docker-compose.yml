@@ -2,19 +2,24 @@ services:
   app:
     container_name: gomap-enrich
     image: quay.io/wkpalan/gomap-enrich:latest
-    build: .
+    platform: linux/amd64
+    user: "shiny"
+    build:
+      context: .
+      platform: linux/amd64
     ports:
       - "3838:3838"
-    volumes: 
-      - ./data:/srv/shiny-server/app/static/data
+      # network_mode: "host"
+      # volumes:
+      # - ./data:/srv/shiny-server/app/static/data
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
-  watchtower:
-    container_name: watchtower
-    image: containrrr/watchtower
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      WATCHTOWER_CLEANUP: "true"
-      WATCHTOWER_SCHEDULE: "1 * * * * *" # Runs daily at 4:00 AM
-    restart: unless-stopped
+  # watchtower:
+  #   container_name: watchtower
+  #   image: containrrr/watchtower
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #   environment:
+  #     WATCHTOWER_CLEANUP: "true"
+  #     WATCHTOWER_SCHEDULE: "1 * * * * *" # Runs daily at 4:00 AM
+  #   restart: unless-stopped
